@@ -77,10 +77,10 @@ export const DEFAULT_EDGES = [
 ];
 
 export const ALGORITHMS = [
-  { id: 'dijkstra', name: 'Dijkstra',       badge: 'OPTIMAL',   desc: 'أفضل خوارزمية لأقصر مسار في شبكة بأوزان موجبة. مضمونة الدقة.', color: '#2d5a3d' },
-  { id: 'astar',    name: 'A* Search',      badge: 'FAST',      desc: 'تستخدم heuristic ذكياً لتوجيه البحث. أسرع من Dijkstra بكثير.',  color: '#2563eb' },
-  { id: 'bellman',  name: 'Bellman-Ford',   badge: 'ROBUST',    desc: 'تدعم الأوزان السالبة وتكتشف الدوائر السالبة تلقائياً.',          color: '#7c3aed' },
-  { id: 'floyd',    name: 'Floyd-Warshall', badge: 'ALL-PAIRS', desc: 'تحسب أقصر مسار بين جميع أزواج العقد في ضربة واحدة.',            color: '#c87f0a' },
+  { id: 'astar',    name: 'A* Search Algorithm',      badge: 'FAST',      desc: 'تستخدم heuristic ذكياً لتوجيه البحث. أسرع من Dijkstra بكثير.',  color: '#2563eb' },
+  { id: 'dijkstra', name: 'UCS/Dijkstra Algorithm',       badge: 'OPTIMAL',   desc: 'أفضل خوارزمية لأقصر مسار في شبكة بأوزان موجبة. مضمونة الدقة.', color: '#2d5a3d' },
+  { id: 'bellman',  name: 'BFS Algorithm',   badge: 'ROBUST',    desc: 'تدعم الأوزان السالبة وتكتشف الدوائر السالبة تلقائياً.',          color: '#7c3aed' },
+  { id: 'floyd',    name: 'MST', badge: 'ALL-PAIRS', desc: 'تحسب أقصر مسار بين جميع أزواج العقد في ضربة واحدة.',            color: '#c87f0a' },
 ];
 
 export const MOCK_TRAFFIC_EVENTS = [
