@@ -514,5 +514,20 @@ export default function MapCanvas({
             </div>
             <div style="margin-bottom:6px;">
               <label style="font-size:11px;color:#555;display:block;margin-bottom:3px">📏 المسافة (كم)</label>
-              <input id="eweight-${edge.id}" type="number" min="0.1" step="0.1" value="${edge.weight}"
+              <input
+  id="eweight-${edge.id}"
+  type="number"
+  min="0.1"
+  step="0.1"
+  value="${edge.weight ?? 1}"
+/>
                 style="width:100%;b
+
+
+
+
+
+
+
+
+
