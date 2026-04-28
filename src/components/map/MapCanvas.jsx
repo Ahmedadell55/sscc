@@ -79,7 +79,7 @@ export default function MapCanvas({
   const mapRef           = useRef(null);
   const markersRef       = useRef({});
   const polylinesRef     = useRef({});
-  const edgeLabelsRef    = useRef({});   // label markers for edge distances
+  const edgeLabelsRef    = useRef({});
   const tileLayerRef     = useRef(null);
 
   const userMarkerRef    = useRef(null);
@@ -88,17 +88,14 @@ export default function MapCanvas({
   const [userPos, setUserPos]         = useState(null);
   const [trackingActive, setTracking] = useState(false);
 
-  // Line drawing preview
   const linePreviewRef   = useRef(null);
-  const pendingNodeRef   = useRef(null);   // first node selected in line mode
+  const pendingNodeRef   = useRef(null);
 
-  // Ruler state
   const [rulerPoints, setRulerPoints] = useState([]);
   const [rulerDistance, setRulerDistance] = useState(null);
   const rulerMarkersRef = useRef([]);
   const rulerLineRef    = useRef(null);
 
-  // Current layer
   const [currentLayerId, setCurrentLayerId] = useState(() =>
     localStorage.getItem('darb_maplayer') || 'street'
   );
@@ -140,12 +137,11 @@ export default function MapCanvas({
       markersRef.current = {};
       polylinesRef.current = {};
     };
-  }, []); // L is a static import
+  }, []);
 
   // ── Change tile layer ─────────────────────────────
   const handleLayerSelect = useCallback((layer) => {
     const map = mapRef.current;
-    
     if (tileLayerRef.current) {
       tileLayerRef.current.remove();
     }
@@ -156,12 +152,11 @@ export default function MapCanvas({
     setCurrentLayerId(layer.id);
     localStorage.setItem('darb_maplayer', layer.id);
     showToast(`🗺 تم التبديل إلى طبقة: ${layer.label}`);
-  }, [L, showToast]);
+  }, [showToast]);
 
   // ── User Location Tracking ───────────────────────
   const updateUserMarker = useCallback((lat, lng, accuracy) => {
     const map = mapRef.current;
-    
 
     const pulseHtml = `
       <div style="position:relative;width:20px;height:20px;">
@@ -205,7 +200,7 @@ export default function MapCanvas({
         dashArray: '4 4',
       }).addTo(map);
     }
-  }, [L]);
+  }, []);
 
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) { showToast('❌ المتصفح لا يدعم تحديد الموقع'); return; }
@@ -244,17 +239,16 @@ export default function MapCanvas({
     showToast('📍 تم إيقاف تتبع الموقع');
   }, [showToast]);
 
-  // Cleanup watch on unmount
   useEffect(() => {
     return () => {
       if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
     };
   }, []);
+
   useEffect(() => {
     const map = mapRef.current;
-    
+
     if (activeTool !== 'ruler') {
-      // Clear ruler
       rulerMarkersRef.current.forEach(m => m.remove());
       rulerMarkersRef.current = [];
       if (rulerLineRef.current) { rulerLineRef.current.remove(); rulerLineRef.current = null; }
@@ -270,7 +264,6 @@ export default function MapCanvas({
       setRulerPoints(prev => {
         const next = [...prev, pt];
 
-        // Add marker
         const icon = L.divIcon({
           className: '',
           html: `<div style="width:12px;height:12px;background:#2563eb;border:2px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>`,
@@ -280,7 +273,6 @@ export default function MapCanvas({
         const marker = L.marker(pt, { icon }).addTo(map);
         rulerMarkersRef.current.push(marker);
 
-        // Update line
         if (rulerLineRef.current) rulerLineRef.current.remove();
         if (next.length > 1) {
           rulerLineRef.current = L.polyline(next, {
@@ -290,7 +282,6 @@ export default function MapCanvas({
             opacity: 0.9,
           }).addTo(map);
 
-          // Calculate total distance
           let total = 0;
           for (let i = 1; i < next.length; i++) {
             total += L.latLng(next[i-1]).distanceTo(L.latLng(next[i]));
@@ -305,12 +296,11 @@ export default function MapCanvas({
 
     map.on('click', onClick);
     return () => map.off('click', onClick);
-  }, [L, activeTool, showToast]);
+  }, [activeTool, showToast]);
 
   // ── Sync Markers ──────────────────────────────────
   useEffect(() => {
     const map = mapRef.current;
-    
 
     const existing = markersRef.current;
     const nodeIds = new Set(nodes.map(n => n.id));
@@ -426,13 +416,13 @@ export default function MapCanvas({
           : existing[node.id].dragging.disable();
       }
     });
-  }, [L, nodes, selectedNode, algoResult, activeTool, edges, setSelectedNode, setSelectedEdge, onDeleteNode, onMoveNode, onAddEdge, onUpdateNode]);
+  }, [nodes, selectedNode, algoResult, activeTool, edges, setSelectedNode, setSelectedEdge, onDeleteNode, onMoveNode, onAddEdge, onUpdateNode]);
 
   // ── Sync Polylines ────────────────────────────────
   useEffect(() => {
     const map = mapRef.current;
-    
-    const existing      = polylinesRef.current;
+
+    const existing       = polylinesRef.current;
     const existingLabels = edgeLabelsRef.current;
     const edgeIds = new Set(edges.map(e => e.id));
 
@@ -441,13 +431,12 @@ export default function MapCanvas({
       if (!edgeIds.has(id) && !id.endsWith('_casing')) {
         existing[id].remove();
         delete existing[id];
-        // remove casing too
         if (existing[id + '_casing']) { existing[id + '_casing'].remove(); delete existing[id + '_casing']; }
       }
     });
     Object.keys(existingLabels).forEach(id => {
       if (!edgeIds.has(id)) { existingLabels[id].remove(); delete existingLabels[id]; }
-    });    });
+    });
 
     edges.forEach(edge => {
       const from = nodes.find(n => n.id === edge.from);
@@ -457,7 +446,6 @@ export default function MapCanvas({
       const isPath     = pathEdges.has(edge.id);
       const isSelected = selectedEdge === edge.id;
 
-      // ── Road style based on weight (heavy roads = wider) ──
       const roadWidth = edge.weight >= 6 ? 'highway'
                       : edge.weight >= 3 ? 'main'
                       : 'street';
@@ -485,7 +473,6 @@ export default function MapCanvas({
           if (isPath) el.classList.add('flow-path');
           else el.classList.remove('flow-path');
         }
-        // update label
         if (existingLabels[edge.id]) {
           const mid = [
             (positions[0][0] + positions[1][0]) / 2,
@@ -501,7 +488,6 @@ export default function MapCanvas({
           existingLabels[edge.id].setIcon(labelIcon);
         }
       } else {
-        // ── Shadow/casing line (road border effect) ──
         const casingId = edge.id + '_casing';
         if (!existing[casingId] && !isPath) {
           existing[casingId] = L.polyline(positions, {
@@ -529,313 +515,4 @@ export default function MapCanvas({
             <div style="margin-bottom:6px;">
               <label style="font-size:11px;color:#555;display:block;margin-bottom:3px">📏 المسافة (كم)</label>
               <input id="eweight-${edge.id}" type="number" min="0.1" step="0.1" value="${edge.weight}"
-                style="width:100%;border:1.5px solid #ddd;border-radius:6px;padding:4px 8px;
-                font-family:Tajawal,sans-serif;font-size:13px;box-sizing:border-box;outline:none;"/>
-            </div>
-            <div style="margin-bottom:8px;">
-              <label style="font-size:11px;color:#555;display:block;margin-bottom:4px">🚦 الكثافة المرورية</label>
-              <div style="display:flex;gap:6px;">
-                <button data-cong="low"    id="clow-${edge.id}"    style="flex:1;padding:5px;border-radius:6px;border:2px solid ${edge.congestion==='low'?'#2d6a4f':'#ddd'};background:${edge.congestion==='low'?'#f0faf4':'#fff'};cursor:pointer;font-size:11px;font-family:Tajawal,sans-serif">🟢 سالك</button>
-                <button data-cong="medium" id="cmed-${edge.id}"   style="flex:1;padding:5px;border-radius:6px;border:2px solid ${edge.congestion==='medium'?'#c87f0a':'#ddd'};background:${edge.congestion==='medium'?'#fffbf0':'#fff'};cursor:pointer;font-size:11px;font-family:Tajawal,sans-serif">🟡 معتدل</button>
-                <button data-cong="high"   id="chigh-${edge.id}"  style="flex:1;padding:5px;border-radius:6px;border:2px solid ${edge.congestion==='high'?'#c0392b':'#ddd'};background:${edge.congestion==='high'?'#fef2f2':'#fff'};cursor:pointer;font-size:11px;font-family:Tajawal,sans-serif">🔴 مزدحم</button>
-              </div>
-            </div>
-            <div style="color:#666;font-size:11px;margin-bottom:8px;">
-              ⏱ الوقت المتوقع: <strong>${Math.round(edge.weight * 2.5)} دقيقة</strong>
-            </div>
-            <div style="display:flex;gap:6px;">
-              <button id="save-edge-${edge.id}" style="flex:1;background:#2d5a3d;color:white;border:none;
-                border-radius:6px;padding:6px;cursor:pointer;font-size:12px;font-family:Tajawal,sans-serif;font-weight:700">
-                💾 حفظ
-              </button>
-              <button id="del-edge-${edge.id}" style="background:#c0392b;color:white;border:none;
-                border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:Tajawal,sans-serif">
-                🗑
-              </button>
-            </div>
-          `;
-          setTimeout(() => {
-            let selectedCong = edge.congestion;
-            // congestion button selection
-            ['low','medium','high'].forEach(c => {
-              const btn = div.querySelector(`[data-cong="${c}"]`);
-              btn?.addEventListener('click', () => {
-                selectedCong = c;
-                ['low','medium','high'].forEach(cc => {
-                  const b = div.querySelector(`[data-cong="${cc}"]`);
-                  const colors = { low:'#2d6a4f', medium:'#c87f0a', high:'#c0392b' };
-                  const bgs = { low:'#f0faf4', medium:'#fffbf0', high:'#fef2f2' };
-                  if (b) {
-                    b.style.borderColor = cc === c ? colors[cc] : '#ddd';
-                    b.style.background  = cc === c ? bgs[cc] : '#fff';
-                  }
-                });
-              });
-            });
-            document.getElementById('save-edge-' + edge.id)?.addEventListener('click', () => {
-              const newWeight = parseFloat(document.getElementById('eweight-' + edge.id)?.value);
-              onUpdateEdge?.(edge.id, {
-                weight: isNaN(newWeight) ? edge.weight : +newWeight.toFixed(2),
-                congestion: selectedCong,
-              });
-              map.closePopup();
-            });
-            document.getElementById('del-edge-' + edge.id)?.addEventListener('click', () => {
-              map.closePopup();
-              onDeleteEdge(edge.id);
-            });
-          }, 10);
-          return div;
-        });
-
-        poly.on('click', () => {
-          if (activeTool === 'ruler') return;
-          if (activeTool === 'delete') { onDeleteEdge(edge.id); return; }
-          setSelectedEdge(prev => prev === edge.id ? null : edge.id);
-          setSelectedNode(null);
-        });
-
-        poly.on('click', () => {
-          if (activeTool === 'ruler') return;
-          if (activeTool === 'delete') { onDeleteEdge(edge.id); return; }
-          setSelectedEdge(prev => prev === edge.id ? null : edge.id);
-          setSelectedNode(null);
-        });
-
-        existing[edge.id] = poly;
-
-        // ── Distance label at midpoint ──
-        const mid = [
-          (positions[0][0] + positions[1][0]) / 2,
-          (positions[0][1] + positions[1][1]) / 2,
-        ];
-        const congColor = CONGESTION_COLORS[edge.congestion] || '#888';
-        const labelIcon = L.divIcon({
-          className: '',
-          html: `<div style="
-            background:white;border:1.5px solid ${congColor};
-            border-radius:8px;padding:2px 7px;
-            font-size:10px;font-weight:800;color:${congColor};
-            font-family:Tajawal,sans-serif;white-space:nowrap;
-            box-shadow:0 2px 6px rgba(0,0,0,.15);pointer-events:none;
-            ">${edge.weight.toFixed(1)} كم</div>`,
-          iconAnchor: [20, 10],
-        });
-        if (existingLabels[edge.id]) {
-          existingLabels[edge.id].setLatLng(mid);
-          existingLabels[edge.id].setIcon(labelIcon);
-        } else {
-          existingLabels[edge.id] = L.marker(mid, { icon: labelIcon, interactive: false, zIndexOffset: -100 }).addTo(map);
-        }
-      }
-    });
-  }, [L, edges, nodes, pathEdges, selectedEdge, activeTool, setSelectedEdge, setSelectedNode, onDeleteEdge, onUpdateEdge]);
-
-  // ── Drop from sidebar ─────────────────────────────
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    const typeData = e.dataTransfer.getData('nodeType');
-    if (!typeData) return;
-    const nodeType = JSON.parse(typeData);
-    const rect = mapContainerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const map = mapRef.current;
-    if (map && L) {
-      const latlng = map.containerPointToLatLng(L.point(x, y));
-      onAddNode(nodeType, x, y, latlng.lat, latlng.lng);
-    } else {
-      onAddNode(nodeType, x, y);
-    }
-  }, [onAddNode, L]);
-
-  // ── Line drawing preview (follows mouse) ─────────
-  useEffect(() => {
-    const map = mapRef.current;
-    
-
-    const onMouseMove = (e) => {
-      if (activeTool !== 'line' || !pendingNodeRef.current) return;
-      const fromNode = nodes.find(n => n.id === pendingNodeRef.current);
-      if (!fromNode) return;
-      const from = svgToLatLng(fromNode);
-      const to   = [e.latlng.lat, e.latlng.lng];
-      if (linePreviewRef.current) {
-        linePreviewRef.current.setLatLngs([from, to]);
-      } else {
-        linePreviewRef.current = L.polyline([from, to], {
-          color: '#2563eb', weight: 3, opacity: 0.7,
-          dashArray: '8 6', interactive: false,
-        }).addTo(map);
-      }
-    };
-
-    const cleanup = () => {
-      if (linePreviewRef.current) {
-        linePreviewRef.current.remove();
-        linePreviewRef.current = null;
-      }
-    };
-
-    if (activeTool !== 'line') {
-      pendingNodeRef.current = null;
-      cleanup();
-      return;
-    }
-
-    map.on('mousemove', onMouseMove);
-    return () => {
-      map.off('mousemove', onMouseMove);
-      cleanup();
-    };
-  }, [L, activeTool, nodes]);
-
-  // ── Click on map ──────────────────────────────────
-  useEffect(() => {
-    const map = mapRef.current;
-    
-    const handleClick = (e) => {
-      if (activeTool === 'node') {
-        const rect = mapContainerRef.current.getBoundingClientRect();
-        const x = e.originalEvent.clientX - rect.left;
-        const y = e.originalEvent.clientY - rect.top;
-        const { lat, lng } = e.latlng;
-        onAddNode(NODE_TYPES[0], x, y, lat, lng);
-      }
-    };
-    map.on('click', handleClick);
-    return () => map.off('click', handleClick);
-  }, [L, activeTool, onAddNode]);
-
-  const currentLayer = TILE_LAYERS.find(l => l.id === currentLayerId);
-
-  // Expose map center for external use (LeftSidebar click-to-add)
-  const getMapCenter = useCallback(() => {
-    const map = mapRef.current;
-    if (!map) return null;
-    const c = map.getCenter();
-    return { lat: c.lat, lng: c.lng };
-  }, []);
-
-  return (
-    <div
-      className={styles.mapArea}
-      data-tool={activeTool}
-      onDrop={handleDrop}
-      onDragOver={e => e.preventDefault()}
-    >
-      <div ref={mapContainerRef} className={styles.leafletMap} />
-
-      {/* AI Banner */}
-      <div className={`${styles.aiBanner} ${isRunning ? styles.aiBannerRunning : ''}`}>
-        <span className={styles.pulseDot}/>
-        {isRunning
-          ? '⏳ جارٍ حساب أفضل مسار...'
-          : '🤖 دَرْب AI يحلّل حركة المرور في الوقت الفعلي'}
-      </div>
-
-      {/* Legend */}
-      <div className={styles.legend}>
-        <div className={styles.legendTitle}>مفتاح الخريطة</div>
-        {[
-          { color: '#2d6a4f', label: 'سالك' },
-          { color: '#c87f0a', label: 'معتدل' },
-          { color: '#c0392b', label: 'مزدحم' },
-        ].map(l => (
-          <div key={l.label} className={styles.legendRow}>
-            <div className={styles.legLine} style={{ background: l.color }}/>{l.label}
-          </div>
-        ))}
-        <div className={styles.legendRow}><div className={styles.legFlow}/>أفضل مسار</div>
-      </div>
-
-      {/* Map Controls */}
-      <div className={styles.mapCtrls}>
-        <button className={styles.ctrlBtn} title="تكبير" aria-label="تكبير"
-          onClick={() => mapRef.current?.zoomIn()}>+</button>
-        <button className={styles.ctrlBtn} title="تصغير" aria-label="تصغير"
-          onClick={() => mapRef.current?.zoomOut()}>−</button>
-        <button className={styles.ctrlBtn} title="إعادة الضبط" aria-label="إعادة الضبط"
-          onClick={() => mapRef.current?.setView(CAIRO_CENTER, CAIRO_ZOOM)}>⟳</button>
-        <button
-          className={`${styles.ctrlBtn} ${trackingActive ? styles.ctrlBtnLocation : ''}`}
-          title={trackingActive ? 'إيقاف تتبع الموقع' : 'تحديد موقعي الحالي'}
-          aria-label={trackingActive ? 'إيقاف الموقع' : 'تحديد الموقع'}
-          onClick={() => trackingActive ? stopTracking() : startTracking()}
-        >
-          {trackingActive ? '🔵' : '📍'}
-        </button>
-        <button
-          className={`${styles.ctrlBtn} ${showLayersPanel ? styles.ctrlBtnActive : ''}`}
-          title="طبقات الخريطة"
-          aria-label="طبقات الخريطة"
-          onClick={() => setShowLayersPanel?.(p => !p)}
-        >
-          {currentLayer?.icon || '🗺'}
-        </button>
-      </div>
-
-      {/* Layers Panel */}
-      {showLayersPanel && (
-        <MapLayersPanel
-          currentLayer={currentLayerId}
-          onSelect={handleLayerSelect}
-          onClose={() => setShowLayersPanel?.(false)}
-        />
-      )}
-
-      {/* Ruler info */}
-      {activeTool === 'ruler' && (
-        <div className={styles.rulerInfo}>
-          <span>📏 أداة القياس</span>
-          {rulerDistance && <span className={styles.rulerDist}>{rulerDistance} كم</span>}
-          <span className={styles.rulerHint}>
-            {rulerPoints.length === 0 ? 'انقر لبدء القياس' : `${rulerPoints.length} نقطة · انقر لإضافة المزيد`}
-          </span>
-          {rulerPoints.length > 0 && (
-            <button className={styles.rulerClear} onClick={() => {
-              rulerMarkersRef.current.forEach(m => m.remove());
-              rulerMarkersRef.current = [];
-              if (rulerLineRef.current) { rulerLineRef.current.remove(); rulerLineRef.current = null; }
-              setRulerPoints([]);
-              setRulerDistance(null);
-            }}>✕ مسح</button>
-          )}
-        </div>
-      )}
-
-      {/* User Location Panel */}
-      {userPos && (
-        <div className={styles.userLocPanel}>
-          <div className={styles.userLocTitle}>📍 موقعك الحالي</div>
-          <div className={styles.userLocRow}>
-            <span>خط العرض</span>
-            <span className={styles.userLocVal}>{userPos.lat.toFixed(5)}°</span>
-          </div>
-          <div className={styles.userLocRow}>
-            <span>خط الطول</span>
-            <span className={styles.userLocVal}>{userPos.lng.toFixed(5)}°</span>
-          </div>
-          <div className={styles.userLocRow}>
-            <span>الدقة</span>
-            <span className={styles.userLocVal}>±{Math.round(userPos.accuracy)} م</span>
-          </div>
-        </div>
-      )}
-
-      {/* Tool indicator */}
-      <div className={styles.toolIndicator}>
-        {activeTool === 'move'   && '🖱 وضع التحريك — اسحب العلامات لتحريكها'}
-        {activeTool === 'delete' && '🗑 وضع الحذف — انقر على عنصر لحذفه'}
-        {activeTool === 'line'   && (selectedNode
-          ? `🔗 تم اختيار عقدة البداية ← انقر على عقدة أخرى لرسم الطريق`
-          : '🔗 رسم طريق — انقر على العقدة الأولى (البداية)')}
-        {activeTool === 'node'   && '📍 انقر في الخريطة لإضافة عقدة جديدة'}
-        {activeTool === 'signal' && '🚦 انقر لإضافة إشارة مرورية'}
-        {activeTool === 'hazard' && '⚠️ انقر لتحديد منطقة حادث'}
-        {activeTool === 'block'  && '🚧 انقر لإغلاق طريق'}
-        {activeTool === 'ruler'  && '📏 أداة القياس — انقر لتحديد نقاط القياس'}
-      </div>
-    </div>
-  );
-}
+                style="width:100%;b
